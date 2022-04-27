@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d748b6f2-74ba-4de4-8754-bbeb3f8814ef" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="send-data-sequentialFlow" doc:id="a6ecae9d-0de6-46a4-b50c-5ff58b42a63f" >
+		<http:listener doc:name="Listener" doc:id="8f209e66-b3bc-4eb9-b418-fc9114bcdeda" config-ref="HTTP_Listener_config" path="senddata"/>
+		<set-variable value="#[payload]" doc:name="Variable for saving original payload" doc:id="1d81c5fa-aa4b-4372-8d40-c7cea33b6b42" variableName="originalpayload"/>
+		<ee:transform doc:name="To CSV" doc:id="6e6bd8c8-fae8-4017-96c8-ab609872b223" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv header = false
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write to CSV" doc:id="778d8e56-8e80-4ea6-9cf1-8c1ff8ab0fae" path="C:\Mulesoft\DataUsed\senddata_sequential.csv" mode="APPEND"/>
+		<ee:transform doc:name="To Json" doc:id="8181ad36-8638-4bda-a8b2-b777e155baf0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.originalpayload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="Write to json" doc:id="3f90adb8-2237-4150-b072-73fb9138555b" path="C:\Mulesoft\DataUsed\senddata_sequential.json" mode="APPEND"/>
+		<logger level="INFO" doc:name="Logger" doc:id="7e0b3915-9d48-41f3-821f-701ef109399b" message="Data sent successfully."/>
+		<ee:transform doc:name="Transform Message" doc:id="112414f9-7fa3-4381-a2de-436fd28f6681" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Data written successfully!",
+	"Code": 200
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
